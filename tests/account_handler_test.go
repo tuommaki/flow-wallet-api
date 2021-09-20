@@ -106,7 +106,7 @@ func TestWatchlistAccountManagement(t *testing.T) {
 	router.Handle("/{address}", accHandler.Details()).Methods(http.MethodGet)
 	router.Handle("/{address}", accHandler.DeleteNonCustodialAccount()).Methods(http.MethodDelete)
 
-	// Non-custodial account.
+	// Create a non-custodial account.
 	adminAuthorizer, err := km.AdminAuthorizer(context.Background())
 	if err != nil {
 		t.Fatal(err)
@@ -114,12 +114,14 @@ func TestWatchlistAccountManagement(t *testing.T) {
 
 	nonCustodialAccount := test.NewFlowAccount(t, fc, adminAuthorizer.Address, adminAuthorizer.Key, adminAuthorizer.Signer)
 
+	// Add created non-custodial account to watchlist.
 	account := accounts.Account{Address: nonCustodialAccount.Address.Hex()}
 	buf := bytes.NewBuffer(asJson(&account))
 	res := send(router, http.MethodPost, "/", buf)
 	assertStatusCode(t, res, http.StatusCreated)
 	fromJsonBody(res, &account)
 
+	// Ensure that account can be found.
 	res = send(router, http.MethodGet, fmt.Sprintf("/%s", account.Address), nil)
 	assertStatusCode(t, res, http.StatusOK)
 	fromJsonBody(res, &account)
@@ -128,9 +130,15 @@ func TestWatchlistAccountManagement(t *testing.T) {
 		t.Fatalf("read account address doesn't match - expected %q, got %q", flow_helpers.FormatAddress(nonCustodialAccount.Address), account.Address)
 	}
 
+	if account.Type != accounts.AccountTypeNonCustodial {
+		t.Fatalf("read account type doesn't match - expected %q, got %q", accounts.AccountTypeNonCustodial, account.Type)
+	}
+
+	// Remove the non-custodial account from watchlist.
 	res = send(router, http.MethodDelete, fmt.Sprintf("/%s", account.Address), nil)
 	assertStatusCode(t, res, http.StatusOK)
 
+	// Ensure that it's not found anymore.
 	res = send(router, http.MethodGet, fmt.Sprintf("/%s", account.Address), nil)
 	assertStatusCode(t, res, http.StatusNotFound)
 }
