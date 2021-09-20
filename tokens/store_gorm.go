@@ -3,6 +3,7 @@ package tokens
 import (
 	"fmt"
 
+	"github.com/flow-hydraulics/flow-wallet-api/flow_helpers"
 	"github.com/flow-hydraulics/flow-wallet-api/templates"
 	"github.com/flow-hydraulics/flow-wallet-api/transactions"
 	"gorm.io/gorm"
@@ -38,6 +39,9 @@ func NewGormStore(db *gorm.DB) *GormStore {
 }
 
 func (s *GormStore) AccountTokens(address string, tokenType templates.TokenType) (att []AccountToken, err error) {
+	// Ensure unified address formatting
+	address = flow_helpers.HexString(address)
+
 	q := s.db
 	if tokenType != templates.NotSpecified {
 		// Filter by type
@@ -51,12 +55,16 @@ func (s *GormStore) AccountTokens(address string, tokenType templates.TokenType)
 }
 
 func (s *GormStore) InsertAccountToken(at *AccountToken) error {
+	// Ensure unified address formatting
+	at.AccountAddress = flow_helpers.HexString(at.AccountAddress)
+
 	// FirstOrCreate as that will just return the first match instead of throwing
 	// a duplicate key error
 	return s.db.FirstOrCreate(&AccountToken{}, at).Error
 }
 
 func (s *GormStore) InsertTokenTransfer(t *TokenTransfer) error {
+	t.RecipientAddress = flow_helpers.HexString(t.RecipientAddress)
 	return s.db.Create(t).Error
 }
 
@@ -76,6 +84,8 @@ func tokenToTransferType(token *templates.Token) (*transactions.Type, error) {
 // TODO: DRY
 
 func (s *GormStore) TokenWithdrawals(address string, token *templates.Token) (tt []*TokenTransfer, err error) {
+	address = flow_helpers.HexString(address)
+
 	txType, err := tokenToTransferType(token)
 	if err != nil {
 		return nil, err
@@ -94,6 +104,8 @@ func (s *GormStore) TokenWithdrawals(address string, token *templates.Token) (tt
 }
 
 func (s *GormStore) TokenWithdrawal(address, transactionId string, token *templates.Token) (t *TokenTransfer, err error) {
+	address = flow_helpers.HexString(address)
+
 	txType, err := tokenToTransferType(token)
 	if err != nil {
 		return nil, err
@@ -113,6 +125,8 @@ func (s *GormStore) TokenWithdrawal(address, transactionId string, token *templa
 }
 
 func (s *GormStore) TokenDeposits(address string, token *templates.Token) (tt []*TokenTransfer, err error) {
+	address = flow_helpers.HexString(address)
+
 	txType, err := tokenToTransferType(token)
 	if err != nil {
 		return nil, err
@@ -131,6 +145,8 @@ func (s *GormStore) TokenDeposits(address string, token *templates.Token) (tt []
 }
 
 func (s *GormStore) TokenDeposit(address, transactionId string, token *templates.Token) (t *TokenTransfer, err error) {
+	address = flow_helpers.HexString(address)
+
 	txType, err := tokenToTransferType(token)
 	if err != nil {
 		return nil, err

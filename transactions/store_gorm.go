@@ -2,6 +2,7 @@ package transactions
 
 import (
 	"github.com/flow-hydraulics/flow-wallet-api/datastore"
+	"github.com/flow-hydraulics/flow-wallet-api/flow_helpers"
 	"gorm.io/gorm"
 )
 
@@ -41,7 +42,7 @@ func (s *GormStore) Transaction(txId string) (t Transaction, err error) {
 // -- Transactions for an account
 
 func (s *GormStore) TransactionsForAccount(tType Type, address string, o datastore.ListOptions) (tt []Transaction, err error) {
-	q := &Transaction{ProposerAddress: address, TransactionType: tType}
+	q := &Transaction{ProposerAddress: flow_helpers.HexString(address), TransactionType: tType}
 	err = s.db.
 		Where(q).
 		Order("created_at desc").
@@ -52,7 +53,7 @@ func (s *GormStore) TransactionsForAccount(tType Type, address string, o datasto
 }
 
 func (s *GormStore) TransactionForAccount(tType Type, address, txId string) (t Transaction, err error) {
-	q := &Transaction{ProposerAddress: address, TransactionType: tType, TransactionId: txId}
+	q := &Transaction{ProposerAddress: flow_helpers.HexString(address), TransactionType: tType, TransactionId: txId}
 	err = s.db.Where(q).First(&t).Error
 	return
 }
@@ -68,9 +69,11 @@ func (s *GormStore) GetOrCreateTransaction(txId string) (t *Transaction) {
 }
 
 func (s *GormStore) InsertTransaction(t *Transaction) error {
+	t.ProposerAddress = flow_helpers.HexString(t.ProposerAddress)
 	return s.db.Create(t).Error
 }
 
 func (s *GormStore) UpdateTransaction(t *Transaction) error {
+	t.ProposerAddress = flow_helpers.HexString(t.ProposerAddress)
 	return s.db.Save(t).Error
 }
