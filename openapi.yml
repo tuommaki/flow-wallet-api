@@ -722,7 +722,7 @@ paths:
       operationId: addWatchlistAccount
       tags:
         - Watchlist
-        requestBody:
+      requestBody:
         content:
           application/json:
             schema:
