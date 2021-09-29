@@ -740,10 +740,8 @@ func TestTransactionHandlers(t *testing.T) {
 		context.Background(),
 		true,
 		cfg.AdminAddress,
-		templates.Raw{
-			Code:      "transaction() { prepare(signer: AuthAccount){} execute { log(\"Hello World!\") }}",
-			Arguments: []templates.Argument{},
-		},
+		"transaction() { prepare(signer: AuthAccount){} execute { log(\"Hello World!\") }}",
+		nil,
 		transactions.General,
 	)
 	if err != nil {
@@ -754,12 +752,10 @@ func TestTransactionHandlers(t *testing.T) {
 		context.Background(),
 		true,
 		cfg.AdminAddress,
-		templates.Raw{
-			Code: transferFlow,
-			Arguments: []templates.Argument{
-				cadence.UFix64(1.0),
-				cadence.NewAddress(flow.HexToAddress(cfg.AdminAddress)),
-			},
+		transferFlow,
+		[]transactions.Argument{
+			cadence.UFix64(1.0),
+			cadence.NewAddress(flow.HexToAddress(cfg.AdminAddress)),
 		},
 		transactions.General,
 	)
@@ -1354,12 +1350,9 @@ func TestTokenHandlers(t *testing.T) {
 	// Mint ExampleNFTs for account 0
 	mintCode := templates.TokenCode(cfg.ChainID, &exampleNft, string(mintBytes))
 	for i := 0; i < 3; i++ {
-		_, _, err := transactionService.Create(context.Background(), true, cfg.AdminAddress, templates.Raw{
-			Code: mintCode,
-			Arguments: []templates.Argument{
-				cadence.NewAddress(flow.HexToAddress(testAccounts[0].Address)),
-			},
-		}, transactions.General)
+		_, _, err := transactionService.Create(context.Background(), true, cfg.AdminAddress, mintCode,
+			[]transactions.Argument{cadence.NewAddress(flow.HexToAddress(testAccounts[0].Address))},
+			transactions.General)
 		fatal(t, err)
 	}
 

@@ -11,7 +11,6 @@ import (
 	"github.com/flow-hydraulics/flow-wallet-api/flow_helpers"
 	"github.com/flow-hydraulics/flow-wallet-api/jobs"
 	"github.com/flow-hydraulics/flow-wallet-api/keys"
-	"github.com/flow-hydraulics/flow-wallet-api/templates"
 	"github.com/onflow/cadence"
 	"github.com/onflow/flow-go-sdk"
 	"github.com/onflow/flow-go-sdk/client"
@@ -38,7 +37,7 @@ func NewService(
 	return &Service{store, km, fc, wp, cfg}
 }
 
-func (s *Service) Create(c context.Context, sync bool, proposerAddress string, raw templates.Raw, tType Type) (*jobs.Job, *Transaction, error) {
+func (s *Service) Create(c context.Context, sync bool, proposerAddress string, code string, args []Argument, tType Type) (*jobs.Job, *Transaction, error) {
 	transaction := &Transaction{}
 
 	process := func(jobResult *jobs.Result) error {
@@ -86,13 +85,13 @@ func (s *Service) Create(c context.Context, sync bool, proposerAddress string, r
 		// https://github.com/flow-hydraulics/flow-wallet-api/issues/79
 		authorizers := []keys.Authorizer{proposer}
 
-		builder, err := templates.NewBuilderFromRaw(raw)
+		flowTx, err := NewFlowTransaction(code, args)
 		if err != nil {
 			return err
 		}
 
 		// Init a new transaction
-		err = New(transaction, *latestBlockId, builder, tType, proposer, payer, authorizers)
+		err = New(transaction, *latestBlockId, flowTx, tType, proposer, payer, authorizers)
 		jobResult.TransactionID = transaction.TransactionId // Update job result
 		if err != nil {
 			return err
@@ -104,7 +103,7 @@ func (s *Service) Create(c context.Context, sync bool, proposerAddress string, r
 		}
 
 		// Send and wait for the transaction to be sealed
-		result, err := flow_helpers.SendAndWait(ctx, s.fc, *builder.Tx, s.cfg.TransactionTimeout)
+		result, err := flow_helpers.SendAndWait(ctx, s.fc, *flowTx, s.cfg.TransactionTimeout)
 		if result != nil {
 			// Record for possible JSON response
 			transaction.Events = result.Events
@@ -139,7 +138,7 @@ func (s *Service) Create(c context.Context, sync bool, proposerAddress string, r
 	return job, transaction, err
 }
 
-func (s *Service) Sign(c context.Context, proposerAddress string, raw templates.Raw, tType Type) (*SignedTransaction, error) {
+func (s *Service) Sign(c context.Context, proposerAddress string, code string, args []Argument, tType Type) (*SignedTransaction, error) {
 	transaction := &Transaction{}
 	var signedTransaction *SignedTransaction
 
@@ -185,19 +184,19 @@ func (s *Service) Sign(c context.Context, proposerAddress string, raw templates.
 		// https://github.com/flow-hydraulics/flow-wallet-api/issues/79
 		authorizers := []keys.Authorizer{proposer}
 
-		builder, err := templates.NewBuilderFromRaw(raw)
+		flowTx, err := NewFlowTransaction(code, args)
 		if err != nil {
 			return err
 		}
 
 		// Init a new transaction
-		err = New(transaction, *latestBlockId, builder, tType, proposer, payer, authorizers)
+		err = New(transaction, *latestBlockId, flowTx, tType, proposer, payer, authorizers)
 		jobResult.TransactionID = transaction.TransactionId // Update job result
 		if err != nil {
 			return err
 		}
 
-		signedTransaction = &SignedTransaction{Transaction: *builder.Tx}
+		signedTransaction = &SignedTransaction{Transaction: *flowTx}
 		return nil
 	}
 
@@ -302,11 +301,11 @@ func (s *Service) DetailsForAccount(ctx context.Context, tType Type, address, tr
 }
 
 // Execute a script
-func (s *Service) ExecuteScript(ctx context.Context, raw templates.Raw) (cadence.Value, error) {
+func (s *Service) ExecuteScript(ctx context.Context, code string, args []Argument) (cadence.Value, error) {
 	return s.fc.ExecuteScriptAtLatestBlock(
 		ctx,
-		[]byte(raw.Code),
-		templates.MustDecodeArgs(raw.Arguments),
+		[]byte(code),
+		MustDecodeArgs(args),
 	)
 }
 

@@ -60,10 +60,6 @@ func (s *Service) Setup(ctx context.Context, sync bool, tokenName, address strin
 		return nil, nil, err
 	}
 
-	raw := templates.Raw{
-		Code: token.Setup,
-	}
-
 	var txType transactions.Type
 
 	switch token.Type {
@@ -73,7 +69,7 @@ func (s *Service) Setup(ctx context.Context, sync bool, tokenName, address strin
 		txType = transactions.NftSetup
 	}
 
-	job, tx, err := s.transactions.Create(ctx, sync, address, raw, txType)
+	job, tx, err := s.transactions.Create(ctx, sync, address, token.Setup, nil, txType)
 
 	// Handle adding token to account in database
 	go func() {
@@ -129,14 +125,7 @@ func (s *Service) Details(ctx context.Context, tokenName, address string) (*Deta
 		return nil, fmt.Errorf("unsupported token type: %s", token.Type)
 	}
 
-	r := templates.Raw{
-		Code: token.Balance,
-		Arguments: []templates.Argument{
-			cadence.NewAddress(flow.HexToAddress(address)),
-		},
-	}
-
-	res, err := s.transactions.ExecuteScript(ctx, r)
+	res, err := s.transactions.ExecuteScript(ctx, token.Balance, []transactions.Argument{cadence.NewAddress(flow.HexToAddress(address))})
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +152,7 @@ func (s *Service) CreateWithdrawal(ctx context.Context, runSync bool, sender str
 	}
 
 	var txType transactions.Type
-	var arguments []templates.Argument = make([]templates.Argument, 2)
+	var arguments []transactions.Argument = make([]transactions.Argument, 2)
 
 	switch token.Type {
 	case templates.FT:
@@ -182,14 +171,8 @@ func (s *Service) CreateWithdrawal(ctx context.Context, runSync bool, sender str
 		return nil, nil, fmt.Errorf("unsupported token type: %s", token.Type)
 	}
 
-	// Raw transfer template
-	raw := templates.Raw{
-		Code:      token.Transfer,
-		Arguments: arguments,
-	}
-
 	// Create the transaction
-	job, tx, err := s.transactions.Create(ctx, runSync, sender, raw, txType)
+	job, tx, err := s.transactions.Create(ctx, runSync, sender, token.Transfer, arguments, txType)
 
 	// Initialise the transfer object
 	transfer := &TokenTransfer{

@@ -1,4 +1,4 @@
-package templates
+package transactions
 
 import (
 	"encoding/json"
@@ -58,7 +58,7 @@ func Test_AsCadence(t *testing.T) {
 
 			var decoded []cadence.Value
 			for j, arg := range arguments {
-				v, err := AsCadence(&arg)
+				v, err := ArgAsCadence(&arg)
 				if err != nil {
 					t.Fatalf("j: %d, err: %#v", j, err)
 				}
