@@ -49,7 +49,7 @@ func New(cfg *configs.Config) (*gorm.DB, error) {
 	} else {
 		err = m.MigrateTo(cfg.DatabaseVersion)
 		if err != nil {
-			return &gorm.DB{}, nil
+			return &gorm.DB{}, err
 		}
 
 		err = m.RollbackTo(cfg.DatabaseVersion)
