@@ -28,7 +28,7 @@ func (s *GormStore) Transactions(o datastore.ListOptions) (tt []Transaction, err
 
 func (s *GormStore) Transaction(txId string) (t Transaction, err error) {
 	q := &Transaction{TransactionId: txId}
-	err = s.db.Where(q).First(&t).Error
+	err = s.db.Joins("Code").Preload("Arguments").Where(q).First(&t).Error
 	return
 }
 

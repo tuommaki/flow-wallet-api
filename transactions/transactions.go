@@ -82,8 +82,10 @@ func (st *SignedTransaction) ToJSONResponse() SignedTransactionJSONResponse {
 
 // Transaction is the database model for all transactions.
 type Transaction struct {
-	TransactionId   string         `gorm:"column:transaction_id;primaryKey"`
-	TransactionType Type           `gorm:"column:transaction_type;index"`
+	TransactionId   string `gorm:"column:transaction_id;primaryKey"`
+	TransactionType Type   `gorm:"column:transaction_type;index"`
+	Code            TransactionCode
+	Arguments       []TransactionArgument
 	ProposerAddress string         `gorm:"column:proposer_address;index"`
 	CreatedAt       time.Time      `gorm:"column:created_at"`
 	UpdatedAt       time.Time      `gorm:"column:updated_at"`
@@ -93,6 +95,22 @@ type Transaction struct {
 
 func (Transaction) TableName() string {
 	return "transactions"
+}
+
+type TransactionCode struct {
+	TransactionId string `gorm:"column:transaction_id;primaryKey"`
+	Code          string `gorm:"column:code"`
+}
+
+type TransactionArgument struct {
+	TransactionId string `gorm:"column:transaction_id:primaryKey"`
+	Index         int    `gorm:"column:index:primaryKey"`
+	Type          string `gorm:column:type"`
+	Value         string `gorm:column:value"`
+}
+
+func (TransactionArgument) TableName() string {
+	return "transaction_arguments"
 }
 
 // Transaction JSON HTTP request
