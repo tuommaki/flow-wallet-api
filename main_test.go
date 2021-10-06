@@ -206,17 +206,17 @@ func TestAccountServices(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if job.Status != jobs.Accepted && job.Status != jobs.Complete {
+		if job.State != jobs.Accepted && job.State != jobs.Complete {
 			t.Errorf("expected job status to be %s or %s but got %s",
-				jobs.Accepted, jobs.Complete, job.Status)
+				jobs.Accepted, jobs.Complete, job.State)
 		}
 
-		for job.Status == jobs.Accepted {
+		for job.State == jobs.Accepted {
 			time.Sleep(10 * time.Millisecond)
 		}
 
-		if job.Status != jobs.Complete {
-			t.Errorf("expected job status to be %s got %s", jobs.Complete, job.Status)
+		if job.State != jobs.Complete {
+			t.Errorf("expected job status to be %s got %s", jobs.Complete, job.State)
 		}
 
 		account, err := service.Details(job.Result)
@@ -385,7 +385,7 @@ func TestAccountHandlers(t *testing.T) {
 				json.Unmarshal(rr.Body.Bytes(), &rJob)
 				id := rJob.ID.String()
 				job, _ := jobService.Details(id)
-				for job.Status == jobs.Accepted {
+				for job.State == jobs.Accepted {
 					job, _ = jobService.Details(id)
 				}
 				tempAccAddress = job.Result
