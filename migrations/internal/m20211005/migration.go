@@ -16,7 +16,7 @@ type Job struct {
 	Type          string         `gorm:"column:type"`
 	Error         string         `gorm:"column:error"`
 	Result        string         `gorm:"column:result"`
-	RetryCount    int            `gorm:"column:retry_count;default:0"`
+	ExecCount     int            `gorm:"column:exec_count;default:0"`
 	TransactionID string         `gorm:"column:transaction_id"`
 	CreatedAt     time.Time      `gorm:"column:created_at"`
 	UpdatedAt     time.Time      `gorm:"column:updated_at"`
@@ -112,7 +112,7 @@ func Rollback(tx *gorm.DB) error {
 		return err
 	}
 
-	if err := tx.Migrator().DropColumn(&Job{}, "retry_count"); err != nil {
+	if err := tx.Migrator().DropColumn(&Job{}, "exec_count"); err != nil {
 		return err
 	}
 

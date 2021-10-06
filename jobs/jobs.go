@@ -48,7 +48,7 @@ type Job struct {
 	Error         string         `gorm:"column:error"`
 	Result        string         `gorm:"column:result"`
 	TransactionID string         `gorm:"column:transaction_id"`
-	RetryCount    int            `gorm:"column:retry_count;default:0"`
+	ExecCount     int            `gorm:"column:exec_count;default:0"`
 	CreatedAt     time.Time      `gorm:"column:created_at"`
 	UpdatedAt     time.Time      `gorm:"column:updated_at"`
 	DeletedAt     gorm.DeletedAt `gorm:"column:deleted_at;index"`
