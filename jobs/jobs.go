@@ -43,6 +43,7 @@ const (
 // Job database model
 type Job struct {
 	ID            uuid.UUID      `gorm:"column:id;primary_key;type:uuid;"`
+	Type          string         `gorm:"column:type"`
 	State         State          `gorm:"column:state;default:INIT"`
 	Error         string         `gorm:"column:error"`
 	Result        string         `gorm:"column:result"`
