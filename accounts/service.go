@@ -81,14 +81,13 @@ func (s *Service) InitAdminAccount(ctx context.Context) error {
 }
 
 func (s *Service) addAdminProposalKeys(ctx context.Context, count uint16) error {
-	_, _, err := s.transactions.Create(ctx, true, s.cfg.AdminAddress, templates.Raw{
-		Code: template_strings.AddProposalKeyTransaction,
-		Arguments: []templates.Argument{
-			cadence.NewInt(s.cfg.AdminKeyIndex),
-			cadence.NewUInt16(count),
-		},
-	}, transactions.General)
+	code := template_strings.AddProposalKeyTransaction
+	args := []transactions.Argument{
+		cadence.NewInt(s.cfg.AdminKeyIndex),
+		cadence.NewUInt16(count),
+	}
 
+	_, _, err := s.transactions.Create(ctx, true, s.cfg.AdminAddress, code, args, transactions.General)
 	return err
 }
 

@@ -5,7 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/flow-hydraulics/flow-wallet-api/templates"
 	"github.com/flow-hydraulics/flow-wallet-api/tests/internal/test"
 	"github.com/flow-hydraulics/flow-wallet-api/transactions"
 	"github.com/onflow/flow-go-sdk"
@@ -15,7 +14,7 @@ func Test_TransactionSignByAdmin(t *testing.T) {
 	cfg := test.LoadConfig(t, testConfigPath)
 	txSvc := test.GetServices(t, cfg).GetTransactions()
 
-	tx, err := txSvc.Sign(context.Background(), cfg.AdminAddress, templates.Raw{}, transactions.General)
+	tx, err := txSvc.Sign(context.Background(), cfg.AdminAddress, "", nil, transactions.General)
 	if err != nil {
 		t.Fatalf("expected err == nil, got %#v", err)
 	}
@@ -45,7 +44,7 @@ func Test_TransactionSignByAnotherAccount(t *testing.T) {
 		t.Fatalf("expected err == nil, got %#v", err)
 	}
 
-	tx, err := svcs.GetTransactions().Sign(ctx, acc.Address, templates.Raw{}, transactions.General)
+	tx, err := svcs.GetTransactions().Sign(ctx, acc.Address, "", nil, transactions.General)
 	if err != nil {
 		t.Fatalf("expected err == nil, got %#v", err)
 	}

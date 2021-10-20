@@ -8,7 +8,6 @@ import (
 
 	"github.com/flow-hydraulics/flow-wallet-api/flow_helpers"
 	"github.com/flow-hydraulics/flow-wallet-api/keys"
-	"github.com/flow-hydraulics/flow-wallet-api/templates"
 	"github.com/flow-hydraulics/flow-wallet-api/templates/template_strings"
 	"github.com/flow-hydraulics/flow-wallet-api/transactions"
 	"github.com/onflow/cadence"
@@ -65,12 +64,10 @@ func New(
 
 	*k = *newPrivateKey
 
-	builder := templates.NewBuilderFromTx(
-		flow_templates.CreateAccount(
-			[]*flow.AccountKey{accountKey},
-			nil,
-			auth.Address,
-		),
+	flowTx := flow_templates.CreateAccount(
+		[]*flow.AccountKey{accountKey},
+		nil,
+		auth.Address,
 	)
 
 	proposer, err := km.AdminProposalKey(ctx)
@@ -78,12 +75,12 @@ func New(
 		return err
 	}
 
-	if err := transactions.New(transaction, *blockId, builder, transactions.General, proposer, auth, nil); err != nil {
+	if err := transactions.New(transaction, *blockId, flowTx, transactions.General, proposer, auth, nil); err != nil {
 		return err
 	}
 
 	// Send and wait for the transaction to be sealed
-	result, err := flow_helpers.SendAndWait(ctx, fc, *builder.Tx, transactionTimeout)
+	result, err := flow_helpers.SendAndWait(ctx, fc, *flowTx, transactionTimeout)
 	if result != nil {
 		// Record for possible JSON response
 		transaction.Events = result.Events
@@ -141,27 +138,25 @@ func AddContract(
 		return nil, err
 	}
 
-	raw := templates.Raw{
-		Code: template_strings.AddAccountContractWithAdmin,
-		Arguments: []templates.Argument{
-			cadence.NewString(contract.Name),
-			cadence.NewString(contract.SourceHex()),
-		},
+	code := template_strings.AddAccountContractWithAdmin
+	args := []transactions.Argument{
+		cadence.NewString(contract.Name),
+		cadence.NewString(contract.SourceHex()),
 	}
 
-	b, err := templates.NewBuilderFromRaw(raw)
+	flowTx, err := transactions.NewFlowTransaction(code, args)
 	if err != nil {
 		return nil, err
 	}
 
-	b.Tx.AddAuthorizer(adminAuth.Address)
+	flowTx.AddAuthorizer(adminAuth.Address)
 
 	t := transactions.Transaction{}
-	if err := transactions.New(&t, *id, b, transactions.General, userAuth, adminAuth, nil); err != nil {
+	if err := transactions.New(&t, *id, flowTx, transactions.General, userAuth, adminAuth, nil); err != nil {
 		return nil, err
 	}
 
-	result, err := flow_helpers.SendAndWait(ctx, fc, *b.Tx, transactionTimeout)
+	result, err := flow_helpers.SendAndWait(ctx, fc, *flowTx, transactionTimeout)
 	if result != nil {
 		// Record for possible JSON response
 		t.Events = result.Events

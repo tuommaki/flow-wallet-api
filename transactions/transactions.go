@@ -7,7 +7,6 @@ import (
 
 	"github.com/flow-hydraulics/flow-wallet-api/flow_helpers"
 	"github.com/flow-hydraulics/flow-wallet-api/keys"
-	"github.com/flow-hydraulics/flow-wallet-api/templates"
 	"github.com/onflow/flow-go-sdk"
 	"gorm.io/gorm"
 )
@@ -104,6 +103,12 @@ func (Transaction) TableName() string {
 	return "transactions"
 }
 
+// Transaction JSON HTTP request
+type JSONRequest struct {
+	Code      string     `json:"code"`
+	Arguments []Argument `json:"arguments"`
+}
+
 // Transaction JSON HTTP response
 type JSONResponse struct {
 	TransactionId   string       `json:"transactionId"`
@@ -126,12 +131,12 @@ func (t Transaction) ToJSONResponse() JSONResponse {
 func New(
 	transaction *Transaction,
 	referenceBlockID flow.Identifier,
-	builder *templates.TransactionBuilder,
+	flowTx *flow.Transaction,
 	tType Type,
 	proposer, payer keys.Authorizer,
 	authorizers []keys.Authorizer) error {
 
-	builder.Tx.
+	flowTx.
 		SetReferenceBlockID(referenceBlockID).
 		SetProposalKey(proposer.Address, proposer.Key.Index, proposer.Key.SequenceNumber).
 		SetPayer(payer.Address).
@@ -139,7 +144,7 @@ func New(
 
 	// Add authorizers
 	for _, a := range authorizers {
-		builder.Tx.AddAuthorizer(a.Address)
+		flowTx.AddAuthorizer(a.Address)
 	}
 
 	// Authorizers sign the payload
@@ -150,26 +155,26 @@ func New(
 			continue
 		}
 
-		if err := builder.Tx.SignPayload(a.Address, a.Key.Index, a.Signer); err != nil {
+		if err := flowTx.SignPayload(a.Address, a.Key.Index, a.Signer); err != nil {
 			return err
 		}
 	}
 
 	// Proposer signs the payload
 	if !proposer.Equals(payer) {
-		if err := builder.Tx.SignPayload(proposer.Address, proposer.Key.Index, proposer.Signer); err != nil {
+		if err := flowTx.SignPayload(proposer.Address, proposer.Key.Index, proposer.Signer); err != nil {
 			return err
 		}
 	}
 
 	// Payer signs the envelope
-	if err := builder.Tx.SignEnvelope(payer.Address, payer.Key.Index, payer.Signer); err != nil {
+	if err := flowTx.SignEnvelope(payer.Address, payer.Key.Index, payer.Signer); err != nil {
 		return err
 	}
 
 	transaction.ProposerAddress = flow_helpers.FormatAddress(proposer.Address)
 	transaction.TransactionType = tType
-	transaction.TransactionId = builder.Tx.ID().Hex()
+	transaction.TransactionId = flowTx.ID().Hex()
 
 	return nil
 }
